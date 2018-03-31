@@ -46,6 +46,10 @@ static void help()
 }
 
 Point2f point;
+vector<Point2f> mousePoints;
+vector<vector<Point2f> > pointsTrackId;
+//vector<Point2f> pointsTrackdeatal;
+
 bool addRemovePt = false;
 
 static void onMouse( int event, int x, int y, int /*flags*/, void* /*param*/ )
@@ -53,6 +57,9 @@ static void onMouse( int event, int x, int y, int /*flags*/, void* /*param*/ )
     if( event == EVENT_LBUTTONDOWN )
     {
         point = Point2f((float)x, (float)y);
+        cout<<"mouse x"<<(float)x<<"mouse y"<<(float)y<<endl;
+        mousePoints.push_back(point);
+       // circle( image2, point, 3, Scalar(0,255,0), -1, 8);
         addRemovePt = true;
     }
 }
@@ -196,38 +203,39 @@ int main( int argc, char** argv )
 //        //gray=fgMaskMOG2;
 //        image.copyTo(image2);
         //imshow("frame", image);
-        imshow("mog Demo", fgMaskMOG2);
+        //imshow("mog Demo", fgMaskMOG2);
+        Mat newGray;
         cvtColor(image, hsv, COLOR_BGR2HSV);
-        cvtColor(hsv, gray, COLOR_BGR2GRAY);
+        cvtColor(hsv, newGray, COLOR_BGR2GRAY);
        //
     
 //     imshow("gary", gray);
 //        imshow("gar2y", hsv);
         
         if( nightMode )
-            image = Scalar::all(0);
+            image2 = Scalar::all(0);
         
         if( needToInit )
         {
             // automatic initialization
-            goodFeaturesToTrack(gray, points[1], MAX_COUNT, 0.01, 10, Mat(), 3, 0, 0, 0.04);
-            cornerSubPix(gray, points[1], subPixWinSize, Size(-1,-1), termcrit);
+            goodFeaturesToTrack(newGray, points[1], MAX_COUNT, 0.01, 10, Mat(), 3, 0, 0, 0.04);
+            //cornerSubPix(newGray, points[1], subPixWinSize, Size(-1,-1), termcrit);
             addRemovePt = false;
         }
         else if( !points[0].empty() )
         {
             
             
-//            for( int i=0; i < points[0].size(); i++ )
-//            {
-//                putText(image, to_string(i), points[0][i], FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(255,0,0));
-//            }
-//            
+            for( int i=0; i < points[0].size(); i++ )
+            {
+                putText(image2, to_string(i), points[0][i], FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(255,0,0));
+            }
+//
             vector<uchar> status;
             vector<float> err;
             if(prevGray.empty())
-                gray.copyTo(prevGray);
-            calcOpticalFlowPyrLK(prevGray, gray, points[0], points[1], status, err, winSize,
+                newGray.copyTo(prevGray);
+            calcOpticalFlowPyrLK(prevGray, newGray, points[0], points[1], status, err, winSize,
                                  3, termcrit, 0, 0.001);
             size_t i, k;
             //int counter=0;
@@ -245,12 +253,10 @@ int main( int argc, char** argv )
                 
                 if( !status[i] )
                     continue;
-                
                 points[1][k++] = points[1][i];
                 circle( image2, points[1][i], 3, Scalar(0,255,0), -1, 8);
                // counter++;
-                
-                
+
             }
             points[1].resize(k);
         }
@@ -260,13 +266,34 @@ int main( int argc, char** argv )
         {
             vector<Point2f> tmp;
             tmp.push_back(point);
-            cornerSubPix( gray, tmp, winSize, Size(-1,-1), termcrit);
+            //cornerSubPix( newGray, tmp, winSize, Size(-1,-1), termcrit);
             points[1].push_back(tmp[0]);
             addRemovePt = false;
         }
         
         needToInit = false;
+        //record start point
+//        if(!mousePoints.empty())
+//        {
+//            for(int i=0; i < mousePoints.size(); i++ )
+//            {
+//                circle( image2, mousePoints[i], 3, Scalar(255,0,0), -1, 8);
+//                putText(image2, to_string(i), mousePoints[i], FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(255,0,0));
+//
+//            }
+//        }
+//
+        
+        
+        
+        
         imshow("LK Demo", image2);
+        
+        
+        
+        
+        
+        
         
         char c = (char)waitKey(10);
         if( c == 27 )
@@ -285,7 +312,7 @@ int main( int argc, char** argv )
                 break;
         }
         std::swap(points[1], points[0]);
-        cv::swap(prevGray, gray);
+        cv::swap(prevGray, newGray);
     }
     
     return 0;
