@@ -48,6 +48,15 @@ static void help()
 Point2f point;
 vector<Point2f> mousePoints;
 vector<vector<Point2f> > pointsTrackId;
+
+vector<Point2f> countourCenter;
+vector<Point2f> newTrackCenter;
+
+
+
+
+
+
 //vector<Point2f> pointsTrackdeatal;
 
 bool addRemovePt = false;
@@ -186,31 +195,57 @@ int main( int argc, char** argv )
         Mat drawing = Mat::zeros( image.size(), CV_8UC3 );
         for( int i = 0; i< contours.size(); i++ )
         {
-
             double a=contourArea( contours[i],false);
             // cout<<a<<endl;
               if(a>50)
                 {
-
+                    int contourX=0;
+                    int contourY=0;
+                    contourX=boundRect[i].tl().x+(boundRect[i].br().x-boundRect[i].tl().x)/2;
+                    contourY=boundRect[i].tl().y+(boundRect[i].br().y-boundRect[i].tl().y)/2;
+                    Point2f temPoint;
+                    temPoint=Point2f(contourX, contourY);
+                    countourCenter.push_back(temPoint);
+//                    addRemovePt = true;
+//                    if( !points[1].empty() )
+//                    {
+//
+//                        for( int j=0; j < points[1].size(); j++ )
+//                        {
+//                            if( norm(temPoint - points[1][i]) <= 5 )
+//                            {
+//                                addRemovePt = false;
+//                                continue;
+//                            }
+//                        }
+//
+//                        if( addRemovePt && points[1].size() < (size_t)MAX_COUNT )
+//                        {
+//                            vector<Point2f> tmp;
+//                            tmp.push_back(temPoint);
+//                            //cornerSubPix( newGray, tmp, winSize, Size(-1,-1), termcrit);
+                      //  points[1].push_back(temPoint);
+//                            addRemovePt = false;
+//                        }
+//
+//
+//
+//
+//
+//
+//                    }
+//
+                    
                     // string carDinit = "CD init Dfor car: "+to_string(i);
                     drawContours( image, contours_poly, i, Scalar(255,0,255), 2, 8, vector<Vec4i>(), 0, Point() );
                     rectangle( image, boundRect[i].tl(), boundRect[i].br(),Scalar(255,0,255), -1, 8, 0);
-                     rectangle( image2, boundRect[i].tl(), boundRect[i].br(),Scalar(255,0,255), 1, 8, 0);
-                    }
-
+                    rectangle( image2, boundRect[i].tl(), boundRect[i].br(),Scalar(255,0,255), 1, 8, 0);
+                }
         }
-//
-//        //gray=fgMaskMOG2;
-//        image.copyTo(image2);
-        //imshow("frame", image);
-        //imshow("mog Demo", fgMaskMOG2);
+
         Mat newGray;
         cvtColor(image, hsv, COLOR_BGR2HSV);
         cvtColor(hsv, newGray, COLOR_BGR2GRAY);
-       //
-    
-//     imshow("gary", gray);
-//        imshow("gar2y", hsv);
         
         if( nightMode )
             image2 = Scalar::all(0);
@@ -224,13 +259,11 @@ int main( int argc, char** argv )
         }
         else if( !points[0].empty() )
         {
-            
-            
+  
             for( int i=0; i < points[0].size(); i++ )
             {
                 putText(image2, to_string(i), points[0][i], FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(255,0,0));
             }
-//
             vector<uchar> status;
             vector<float> err;
             if(prevGray.empty())
@@ -250,13 +283,11 @@ int main( int argc, char** argv )
                         continue;
                     }
                 }
-                
                 if( !status[i] )
                     continue;
                 points[1][k++] = points[1][i];
                 circle( image2, points[1][i], 3, Scalar(0,255,0), -1, 8);
                // counter++;
-
             }
             points[1].resize(k);
         }
@@ -282,18 +313,52 @@ int main( int argc, char** argv )
 //
 //            }
 //        }
-//
+//check couter
         
         
         
         
+        if( !points[0].empty() )
+        {
+            
+            
+            for( int k=0; k < countourCenter.size(); k++ )
+            {
+             bool newPoint=true;
+                for( int i=0; i < points[0].size(); i++ )
+                {
+                    //check contour center
+                    //Point2f temTrackPoint;
+                   
+                      // temTrackPoint=countourCenter[k];
+                       if( norm(countourCenter[k] - points[1][i]) <= 5 )
+                       {
+                           newPoint=false;
+                           break;
+                       }
+                   }
+                if(newPoint==true)
+                {
+                    newTrackCenter.push_back(countourCenter[k]);
+                    
+                    circle( image2, countourCenter[k], 3, Scalar(255,0,0), -1, 8);
+                   // putText(image2, to_string(i), mousePoints[i], FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(255,0,0));
+                }
+                
+                
+                
+            }
+        }
+        
+        
+        
+        
+        
+        
+        
+        
+        countourCenter.clear();
         imshow("LK Demo", image2);
-        
-        
-        
-        
-        
-        
         
         char c = (char)waitKey(10);
         if( c == 27 )
