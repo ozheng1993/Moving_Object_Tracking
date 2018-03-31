@@ -231,7 +231,7 @@ int main( int argc, char** argv )
         }
         
         needToInit = false;
-        imshow("LK Demo", image);
+        //imshow("LK Demo", image);
         
         char c = (char)waitKey(10);
         if( c == 27 )
