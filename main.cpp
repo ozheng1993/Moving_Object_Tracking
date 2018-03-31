@@ -87,6 +87,7 @@ int main( int argc, char** argv )
     pMOG2->setShadowValue(10);
     const int MAX_COUNT = 5000;
     bool needToInit = false;
+    bool autoMode= false;
     bool nightMode = false;
     
     help();
@@ -318,7 +319,7 @@ int main( int argc, char** argv )
         
         
         
-        if( !points[0].empty() )
+        if( !points[0].empty() &&autoMode)
         {
             
             
@@ -331,7 +332,7 @@ int main( int argc, char** argv )
                     //Point2f temTrackPoint;
                    
                       // temTrackPoint=countourCenter[k];
-                       if( norm(countourCenter[k] - points[1][i]) <= 5 )
+                       if( norm(countourCenter[k] - points[1][i]) <= 40 )
                        {
                            newPoint=false;
                            break;
@@ -339,9 +340,23 @@ int main( int argc, char** argv )
                    }
                 if(newPoint==true)
                 {
-                    newTrackCenter.push_back(countourCenter[k]);
                     
-                    circle( image2, countourCenter[k], 3, Scalar(255,0,0), -1, 8);
+                    addRemovePt = true;
+                    
+                    if( addRemovePt && points[1].size() < (size_t)MAX_COUNT )
+                    {
+                        vector<Point2f> tmp;
+                        tmp.push_back(countourCenter[k]);
+                        //cornerSubPix( newGray, tmp, winSize, Size(-1,-1), termcrit);
+                        points[1].push_back(tmp[0]);
+                        addRemovePt = false;
+                    }
+                    
+                    
+                    
+                   // newTrackCenter.push_back(countourCenter[k]);
+                    
+                    //circle( image2, countourCenter[k], 3, Scalar(255,0,0), -1, 8);
                    // putText(image2, to_string(i), mousePoints[i], FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(255,0,0));
                 }
                 
@@ -349,13 +364,6 @@ int main( int argc, char** argv )
                 
             }
         }
-        
-        
-        
-        
-        
-        
-        
         
         countourCenter.clear();
         imshow("LK Demo", image2);
@@ -374,6 +382,9 @@ int main( int argc, char** argv )
                 break;
             case 'n':
                 nightMode = !nightMode;
+                break;
+            case 'a':
+                autoMode = !autoMode;
                 break;
         }
         std::swap(points[1], points[0]);
