@@ -64,10 +64,11 @@ int main( int argc, char** argv )
     Size subPixWinSize(10,10), winSize(31,31);
     //MOG2 approach
     pMOG2 = createBackgroundSubtractorMOG2();
-    //pMOG2->setDetectShadows(true);
+    pMOG2->setDetectShadows(true);
     pMOG2->setHistory(100);
-    //pMOG2->setNMixtures(5);
+    pMOG2->setNMixtures(5);
     pMOG2->setBackgroundRatio(0.7);
+    pMOG2->setShadowValue(10);
     const int MAX_COUNT = 5000;
     bool needToInit = false;
     bool nightMode = false;
@@ -102,22 +103,60 @@ int main( int argc, char** argv )
        // resize(frame, frame, cv::Size(), 0.5, 0.5);
         frame.copyTo(image);
         frame.copyTo(image2);
+        
+        // Create a kernel that we will use for accuting/sharpening our image
+        Mat kernel = (Mat_<float>(3,3) <<
+                      1,  1, 1,
+                      1, -8, 1,
+                      1,  1, 1); // an approximation of second derivative, a quite strong kernel
+        // do the laplacian filtering as it is
+        // well, we need to convert everything in something more deeper then CV_8U
+        // because the kernel has some negative values,
+        // and we can expect in general to have a Laplacian image with negative values
+        // BUT a 8bits unsigned int (the one we are working with) can contain values from 0 to 255
+        // so the possible negative number will be truncated
+        Mat imgLaplacian;
+        Mat sharp = image; // copy source image to another temporary one
+        filter2D(sharp, imgLaplacian, CV_32F, kernel);
+        image.convertTo(sharp, CV_32F);
+        Mat imgResult = sharp - imgLaplacian;
+        // convert back to 8bits gray scale
+        imgResult.convertTo(imgResult, CV_8UC3);
+        imgLaplacian.convertTo(imgLaplacian, CV_8UC3);
+        // imshow( "Laplace Filtered Image", imgLaplacian );
+        //imshow( "New Sharped Image", imgResult );
+ 
         cvtColor(image, gray, COLOR_BGR2GRAY);
-        
-        GaussianBlur( gray, blur, Size(5, 5), 5, 5);
+        GaussianBlur( gray, blur, Size(3, 3), 5, 5);
         pMOG2->apply(blur, fgMaskMOG2,-1);
+//        GaussianBlur( fgMaskMOG2, blur, Size(3, 3), 5, 5);
+//        pMOG2->apply(fgMaskMOG2, fgMaskMOG2,-1);
+//        //imshow("fgMaskMOG21", fgMaskMOG2);
+//        //threshold(blur, blur, .1, 1., CV_THRESH_BINARY);
+//
+//
+//        //imshow("blur", blur);
+//
+//        Mat open =Mat::ones(Size(5,5),CV_8U);
+//        Mat close =Mat::ones(Size(3,3),CV_8U);
+//    morphologyEx( fgMaskMOG2, fgMaskMOG2, MORPH_OPEN, open );
+//     //morphologyEx( blur, blur, MORPH_CLOSE, open );
+//        distanceTransform (fgMaskMOG2, fgMaskMOG2, CV_DIST_L2, 0);
+//
+//        normalize(fgMaskMOG2, fgMaskMOG2, 0.1, 1., NORM_MINMAX);
+//        //imshow("blur2", fgMaskMOG2);
+//        threshold(fgMaskMOG2, fgMaskMOG2, .2, 1., CV_THRESH_BINARY);
+//
+//        fgMaskMOG2.convertTo(fgMaskMOG2, CV_8U);
+
+        //imshow("blur22", fgMaskMOG2);
+      // blur.convertTo(blur, CV_8U);
+    // Canny( fgMaskMOG2, fgMaskMOG2, 50, 150, 7);
         
         
-        Mat open =Mat::ones(Size(3,3),CV_8U);
-        Mat close =Mat::ones(Size(3,3),CV_8U);
-        morphologyEx( fgMaskMOG2, fgMaskMOG2, MORPH_OPEN, open );
-        morphologyEx( fgMaskMOG2, fgMaskMOG2, MORPH_CLOSE, open );
-        Canny( fgMaskMOG2, fgMaskMOG2, 50, 150, 3);
-      
-        
-        
-        
-        
+       // imshow("mog Demo", fgMaskMOG2);
+
+
         vector<vector<Point> > contours;
         vector<Vec4i> hierarchy;
         /// Find contours
@@ -130,8 +169,8 @@ int main( int argc, char** argv )
         for( int i = 0; i < contours.size(); i++ )
         {
             approxPolyDP( Mat(contours[i]), contours_poly[i], 3, true );
-           
-            
+
+
             boundRect[i] = boundingRect( Mat(contours_poly[i]) );
             // boundRect2[i] = boundingRect( Mat(contours_poly[i]) );
             minEnclosingCircle( (Mat)contours_poly[i], center[i], radius[i] );
@@ -140,33 +179,29 @@ int main( int argc, char** argv )
         Mat drawing = Mat::zeros( image.size(), CV_8UC3 );
         for( int i = 0; i< contours.size(); i++ )
         {
-            
-//            float cx = boundRect[i].x+boundRect[i].width/2;
-//            float cy = boundRect[i].y+boundRect[i].height/2;
-//            point = Point2f(cx, cy);
-//            vector<Point2f> tmp;
-//            tmp.push_back(point);
-//            cornerSubPix( gray, tmp, winSize, Size(-1,-1), termcrit);
-//            points[1].push_back(tmp[0]);
-//            addRemovePt = false;
-            
+
+            double a=contourArea( contours[i],false);
+            // cout<<a<<endl;
+              if(a>50)
+                {
+
                     // string carDinit = "CD init Dfor car: "+to_string(i);
                     drawContours( image, contours_poly, i, Scalar(255,0,255), 2, 8, vector<Vec4i>(), 0, Point() );
                     rectangle( image, boundRect[i].tl(), boundRect[i].br(),Scalar(255,0,255), -1, 8, 0);
-//            drawContours( fgMaskMOG2, contours_poly, i, Scalar(255,0,255), 2, 8, vector<Vec4i>(), 0, Point() );
-//            rectangle( fgMaskMOG2, boundRect[i].tl(), boundRect[i].br(),Scalar(255,255,255), -1, 8, 0);
+                     rectangle( image2, boundRect[i].tl(), boundRect[i].br(),Scalar(255,0,255), 1, 8, 0);
+                    }
 
         }
-  
+//
 //        //gray=fgMaskMOG2;
 //        image.copyTo(image2);
-        
-        
+        //imshow("frame", image);
+        imshow("mog Demo", fgMaskMOG2);
         cvtColor(image, hsv, COLOR_BGR2HSV);
         cvtColor(hsv, gray, COLOR_BGR2GRAY);
        //
-       // imshow("mog Demo", fgMaskMOG2);
-//      imshow("gary", gray);
+    
+//     imshow("gary", gray);
 //        imshow("gar2y", hsv);
         
         if( nightMode )
@@ -212,7 +247,7 @@ int main( int argc, char** argv )
                     continue;
                 
                 points[1][k++] = points[1][i];
-                circle( image, points[1][i], 3, Scalar(0,255,0), -1, 8);
+                circle( image2, points[1][i], 3, Scalar(0,255,0), -1, 8);
                // counter++;
                 
                 
@@ -231,7 +266,7 @@ int main( int argc, char** argv )
         }
         
         needToInit = false;
-        //imshow("LK Demo", image);
+        imshow("LK Demo", image2);
         
         char c = (char)waitKey(10);
         if( c == 27 )
