@@ -364,19 +364,6 @@ int main( int argc, char** argv )
             
         }
         
-        
-       
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
 //        while(!selectScale)
 //        {
 //
@@ -481,7 +468,7 @@ int main( int argc, char** argv )
                 circle( frame, scalePoint[i], 3, Scalar(255,125,0), -1, 8);
             }
         }
-        if(selectScale)
+        if(selectScale&&drawLIne==false)
         {
             double line1x1=scalePoint[0].x;
                             double line1y1=scalePoint[0].y;
@@ -509,6 +496,10 @@ int main( int argc, char** argv )
                             //cout<<"reallMeter"<<reallMeter<<endl;
                             // pixelToMeterfinal=lineDist/reallMeter;
                             realPixel=lineDist;
+            drawLIne=true;
+            outfile<<endl;
+            outfile<<"line length:"<<lineDist;
+            
         }
         
         if(selectRot)
@@ -628,9 +619,9 @@ int main( int argc, char** argv )
         {
             double a=contourArea( contours[i],false);
             
-              if(a>150&&a<3000)
+              if(a>100&&a<3000)
               {
-                   cout<<a<<endl;
+                  // cout<<a<<endl;
                     int contourX=0;
                     int contourY=0;
                     double contourW=0.0;
@@ -685,17 +676,25 @@ int main( int argc, char** argv )
 //
 //                    }
 //
-                    
+                  double x1= boundRect[i].tl().x+(boundRect[i].br().x-boundRect[i].tl().x)/5;
+                  double y1= boundRect[i].tl().y+(boundRect[i].br().y-boundRect[i].tl().y)/5;
+                  double x2= boundRect[i].br().x-(boundRect[i].br().x-boundRect[i].tl().x)/5;
+                  double y2= boundRect[i].br().y-(boundRect[i].br().y-boundRect[i].tl().y)/5;
                     // string carDinit = "CD init Dfor car: "+to_string(i);
                     drawContours( image, contours_poly, i, Scalar(255,0,255), 2, 8, vector<Vec4i>(), 0, Point() );
-                    rectangle( image, boundRect[i].tl(), boundRect[i].br(),Scalar(255,0,255), -1, 8, 0);
+                  rectangle( image, cv::Point(x1,y1),cv::Point(x2,y2),Scalar(255,0,255), -1, 8, 0);
                     rectangle( image2, boundRect[i].tl(), boundRect[i].br(),Scalar(255,0,255), 1, 8, 0);
                 }
         }
 
+        
+        //bitwise_or(image,fgMaskMOG2,image);
+        
         Mat newGray;
         cvtColor(image, hsv, COLOR_BGR2HSV);
         cvtColor(hsv, newGray, COLOR_BGR2GRAY);
+        //Mat res;
+       // bitwise_or(newGray, newGray, res);      imshow("OR", res);
         
         if( nightMode )
             image2 = Scalar::all(0);
@@ -913,7 +912,7 @@ int main( int argc, char** argv )
         countourCenter.clear();
  imshow("LK Demo", image2);
 //        imshow("LK Demo2", image);
-    //    imshow("LK Demo3", frame);
+//        imshow("LK Demo3", frame);
         char c = (char)waitKey(10);
 //        if( c == 27 )
 //            break;
