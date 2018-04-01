@@ -48,15 +48,19 @@ static void help()
 Point2f point;
 vector<Point2f> mousePoints;
 vector<vector<Point2f> > pointsTrackId;
-
 vector<Point2f> countourCenter;
+vector<double> countourWidth;
+vector<double> countourHeight;
 vector<Point2f> newTrackCenter;
-
-
-
-
-
-
+vector<bool> carTrakcingStart;
+vector<bool> carTrakcingFinished;
+vector<bool>  carTrakcingLost;
+vector<bool>  carTrakcingRemoved;
+vector<double>  carTrakcingWidth;
+vector<double>  carTrakcingHeight;
+vector<bool>  carTrakcingGetSize;
+//vector<int>  carTrakcingId;
+int carCount=0;
 //vector<Point2f> pointsTrackdeatal;
 
 bool addRemovePt = false;
@@ -68,7 +72,18 @@ static void onMouse( int event, int x, int y, int /*flags*/, void* /*param*/ )
         point = Point2f((float)x, (float)y);
         cout<<"mouse x"<<(float)x<<"mouse y"<<(float)y<<endl;
         mousePoints.push_back(point);
+        carTrakcingStart.push_back(true);
+        carTrakcingFinished.push_back(false);
+        carTrakcingRemoved.push_back(false);
+        carTrakcingLost.push_back(false);
+        
+        
+      carTrakcingWidth.push_back(0.0);
+    carTrakcingHeight.push_back(0.0);
+    carTrakcingGetSize.push_back(false);
+        
        // circle( image2, point, 3, Scalar(0,255,0), -1, 8);
+        //outfile<<frameNumberString<<","<<to_string(timeFrame)<<"," << i<<","<<10<<","<<10<<","<<points[1][i].x<<","<<points[1][i].y<<","<<"tracking"<<",";
         addRemovePt = true;
     }
 }
@@ -91,6 +106,9 @@ int main( int argc, char** argv )
     bool nightMode = false;
     
     help();
+    
+    
+    
     cv::CommandLineParser parser(argc, argv, "{@input|0|}");
     string input = parser.get<string>("@input");
     
@@ -105,6 +123,13 @@ int main( int argc, char** argv )
         return 0;
     }
     
+    //open csv file
+    cout<<"filename"<<input<<endl;
+    string fileName="./"+input+".csv";
+    ofstream outfile;
+    outfile.open(fileName);
+    outfile<<"frameNUM"<<","<<"time(s)"<<","<< "id"<<","<<"width(m)"<<","<<"height(m)"<<","<<"x"<<","<<"y"<<","<<"speed"<<",";
+    outfile<<endl;
     namedWindow( "LK Demo", 1 );
     setMouseCallback( "LK Demo", onMouse, 0 );
     
@@ -117,6 +142,29 @@ int main( int argc, char** argv )
         cap >> frame;
         if( frame.empty() )
             break;
+        
+        stringstream ss;
+        stringstream st;
+        stringstream fps;
+        rectangle(frame, cv::Point(10, 2), cv::Point(450,20),
+                  cv::Scalar(255,255,255), -1);
+        ss << cap.get(CAP_PROP_POS_FRAMES);
+        fps << cap.get(CAP_PROP_FPS);
+        st << cap.get( CAP_PROP_POS_MSEC);
+        string frameNumberString = ss.str();
+        string fpsNumberString = fps.str();
+        string timeNumberString = st.str();
+        double timeFrame=stod(timeNumberString)/1000+40;
+        //  string timeNumberString = st.str();
+        putText(frame, frameNumberString.c_str(), cv::Point(15, 15),
+                FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(255,0,0));
+        putText(frame, fpsNumberString.c_str(), cv::Point(70, 15),
+                FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(255,0,0));
+        putText(frame, to_string(timeFrame), cv::Point(190, 15),
+                FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(255,0,0));
+        
+        
+        
        // resize(frame, frame, cv::Size(), 0.5, 0.5);
         frame.copyTo(image);
         frame.copyTo(image2);
@@ -202,23 +250,40 @@ int main( int argc, char** argv )
                 {
                     int contourX=0;
                     int contourY=0;
+                    double contourW=0.0;
+                    double contourH=0.0;
                     contourX=boundRect[i].tl().x+(boundRect[i].br().x-boundRect[i].tl().x)/2;
                     contourY=boundRect[i].tl().y+(boundRect[i].br().y-boundRect[i].tl().y)/2;
+                    
+                    contourW=boundRect[i].br().x-boundRect[i].tl().x;
+                    contourH=boundRect[i].br().y-boundRect[i].tl().y;
+                    
+                    countourWidth.push_back(contourW);
+                    countourHeight.push_back(contourH);
                     Point2f temPoint;
                     temPoint=Point2f(contourX, contourY);
                     countourCenter.push_back(temPoint);
 //                    addRemovePt = true;
-//                    if( !points[1].empty() )
-//                    {
-//
-//                        for( int j=0; j < points[1].size(); j++ )
-//                        {
-//                            if( norm(temPoint - points[1][i]) <= 5 )
-//                            {
-//                                addRemovePt = false;
-//                                continue;
-//                            }
-//                        }
+                    if( !points[1].empty() )
+                    {
+
+                        for( int j=0; j < points[1].size(); j++ )
+                        {
+                           // cout<<"search for car size"<<endl;
+                            if( points[1][j].x<=boundRect[i].br().x&&
+                                points[1][j].y<=boundRect[i].br().y&&
+                                points[1][j].x>=boundRect[i].tl().x&&
+                                points[1][j].y>=boundRect[i].tl().y&&
+                                carTrakcingGetSize[j]==false)
+                            {
+                                cout<<"find car size"<<contourW<<"|"<<contourH<<endl;
+                                carTrakcingWidth[j]=contourW;
+                                carTrakcingHeight[j]=contourH;
+                                carTrakcingGetSize[j]=true;
+                                continue;
+                            }
+                        }
+                    }
 //
 //                        if( addRemovePt && points[1].size() < (size_t)MAX_COUNT )
 //                        {
@@ -261,10 +326,10 @@ int main( int argc, char** argv )
         else if( !points[0].empty() )
         {
   
-            for( int i=0; i < points[0].size(); i++ )
-            {
-                putText(image2, to_string(i), points[0][i], FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(255,0,0));
-            }
+//            for( int i=0; i < points[0].size(); i++ )
+//            {
+//                putText(image2, to_string(i), points[0][i], FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(255,0,0));
+//            }
             vector<uchar> status;
             vector<float> err;
             if(prevGray.empty())
@@ -278,19 +343,54 @@ int main( int argc, char** argv )
                 //cout<<points[1]<<endl;
                 if( addRemovePt )
                 {
-                    if( norm(point - points[1][i]) <= 5 )
+                    if( norm(point - points[1][i]) <= 10 &&carTrakcingRemoved[i]!=true)
                     {
+                        carTrakcingRemoved[i]=true;
+                        carTrakcingFinished[i]=true;
                         addRemovePt = false;
+                        outfile<<endl;
+                        outfile<<frameNumberString<<","<<to_string(timeFrame)<<"," << i<<","<<carTrakcingWidth[i]<<","<<carTrakcingHeight[i]<<","<<points[1][i].x<<","<<points[1][i].y<<","<<"removed"<<",";
                         continue;
+                        
                     }
                 }
                 if( !status[i] )
-                    continue;
-                points[1][k++] = points[1][i];
+                {
+                    if(points[1][i].x<10 || points[1][i].x>1700)
+                    {
+                        carTrakcingFinished[i]=true;
+                        carTrakcingStart[i]=false;
+                        cout<<"car "<<i<<"tracking finished"<<endl;
+                        outfile<<endl;
+                        outfile<<frameNumberString<<","<<to_string(timeFrame)<<"," << i<<","<<carTrakcingWidth[i]<<","<<carTrakcingHeight[i]<<points[1][i].x<<","<<points[1][i].y<<","<<"finished"<<",";
+                        continue;
+                    }
+                    else if(carTrakcingLost[i]!=true)
+                    {
+                        carTrakcingFinished[i]=true;
+                        carTrakcingStart[i]=false;
+                        carTrakcingLost[i]=true;
+                        cout<<"car "<<i<<"lost"<<endl;
+                        outfile<<endl;
+                        outfile<<frameNumberString<<","<<to_string(timeFrame)<<"," << i<<","<<carTrakcingWidth[i]<<","<<carTrakcingHeight[i]<<","<<points[1][i].x<<","<<points[1][i].y<<","<<"lost"<<",";
+                        continue;
+                    }
+                  
+                   
+                }
+                
+                //points[1][k++] = points[1][i];
+                if(carTrakcingFinished[i]==false)
+                {
                 circle( image2, points[1][i], 3, Scalar(0,255,0), -1, 8);
+                putText(image2, to_string(i), points[0][i], FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(255,0,0));
+                //outfile<<"frameNUM"<<","<<"time(s)"<<","<< "id"<<","<<"width(m)"<<","<<"height(m)"<<","<<"x"<<","<<"y"<<",";
+                    outfile<<endl;
+                    outfile<<frameNumberString<<","<<to_string(timeFrame)<<"," << i<<","<<carTrakcingWidth[i]<<","<<carTrakcingHeight[i]<<","<<points[1][i].x<<","<<points[1][i].y<<","<<"tracking"<<",";
+                }
                // counter++;
             }
-            points[1].resize(k);
+           //points[1].resize(k);
         }
     
         
@@ -332,11 +432,42 @@ int main( int argc, char** argv )
                     //Point2f temTrackPoint;
                    
                       // temTrackPoint=countourCenter[k];
-                       if( norm(countourCenter[k] - points[1][i]) <= 40 )
-                       {
-                           newPoint=false;
-                           break;
-                       }
+                    
+                    
+                    
+//                 if(countourCenter[k].x>400&&countourCenter[k].x<1600 )
+//              {
+//                       if( norm(countourCenter[k] - points[1][i]) <= 50 )
+//                       {
+//                           newPoint=false;
+//
+//
+//                       }
+//
+//                    }
+//
+                if(countourCenter[k].x>100 )
+                    {
+                         newPoint=false;
+                        break;
+                    }
+
+
+                        if( norm(countourCenter[k] - points[1][i]) <= 20 )
+                        {
+                            newPoint=false;
+                            break;
+
+                        }
+
+                    
+//                    if( norm(countourCenter[k] - points[1][i]) <= 50 )
+//                                               {
+//                                                   newPoint=false;
+//
+//                                                   break;
+//                                               }
+//
                    }
                 if(newPoint==true)
                 {
@@ -347,8 +478,16 @@ int main( int argc, char** argv )
                     {
                         vector<Point2f> tmp;
                         tmp.push_back(countourCenter[k]);
+                        carTrakcingStart.push_back(true);
                         //cornerSubPix( newGray, tmp, winSize, Size(-1,-1), termcrit);
                         points[1].push_back(tmp[0]);
+                        carTrakcingStart.push_back(true);
+                        carTrakcingFinished.push_back(false);
+                        carTrakcingRemoved.push_back(false);
+                        carTrakcingLost.push_back(false);
+                        carTrakcingWidth.push_back(0.0);
+                        carTrakcingHeight.push_back(0.0);
+                        carTrakcingGetSize.push_back(false);
                         addRemovePt = false;
                     }
                     
@@ -379,6 +518,10 @@ int main( int argc, char** argv )
             case 'c':
                 points[0].clear();
                 points[1].clear();
+               carTrakcingStart.clear();
+                carTrakcingFinished.clear();
+                carTrakcingLost.clear();
+                 carTrakcingRemoved.clear();
                 break;
             case 'n':
                 nightMode = !nightMode;
