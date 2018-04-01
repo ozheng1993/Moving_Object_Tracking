@@ -98,7 +98,7 @@ static void onMouse( int event, int x, int y, int /*flags*/, void* /*param*/ )
         
         
         point = Point2f((float)x, (float)y);
-        cout<<"mouse x"<<(float)x<<"mouse y"<<(float)y<<endl;
+        //cout<<"mouse x"<<(float)x<<"mouse y"<<(float)y<<endl;
         mousePoints.push_back(point);
         carTrakcingStart.push_back(true);
         carTrakcingFinished.push_back(false);
@@ -128,7 +128,7 @@ static void onMouse( int event, int x, int y, int /*flags*/, void* /*param*/ )
         if(!selectRot)
         {
             roiPoint.push_back( Point(x,y));
-            cout<<roiPoint[roiPoint.size()-1]<<endl;
+            //cout<<roiPoint[roiPoint.size()-1]<<endl;
         }
         
         
@@ -141,7 +141,7 @@ static void onMouse( int event, int x, int y, int /*flags*/, void* /*param*/ )
         if(!selectScale)
         {
         scalePoint.push_back( Point(x,y));
-        cout<<scalePoint[scalePoint.size()-1]<<endl;
+        //cout<<scalePoint[scalePoint.size()-1]<<endl;
         }
     }
     else if ( event == EVENT_MOUSEMOVE )
@@ -160,7 +160,7 @@ double drwaLine(Mat frame, int x1, int y1, int x2, int y2)
              LINE_8
              );
     double lineDist=sqrt(pow((x1-x2),2)-pow((y1-y2),2));
-    cout<<"linedistance"<<lineDist<<endl;
+    //cout<<"linedistance"<<lineDist<<endl;
     return lineDist;
     
 }
@@ -485,9 +485,9 @@ int main( int argc, char** argv )
                             double xdiff2=xdiff*xdiff;
             
                             double lineDist=sqrt(ydiff2+xdiff2);
-                            cout<<"xdiff2"<<xdiff2<<endl;
-                            cout<<"ydiff2"<<ydiff2<<endl;
-                            cout<<"linedistance"<<lineDist<<endl;
+//                            cout<<"xdiff2"<<xdiff2<<endl;
+//                            cout<<"ydiff2"<<ydiff2<<endl;
+//                            cout<<"linedistance"<<lineDist<<endl;
                             //cout<<"reallMeter"<<reallMeter<<endl;
                             // pixelToMeterfinal=lineDist/reallMeter;
                             realPixel=lineDist;
@@ -673,7 +673,7 @@ int main( int argc, char** argv )
                                 points[1][j].y>=boundRect[i].tl().y&&
                                 carTrakcingGetSize[j]==false)
                             {
-                                cout<<"find car size"<<contourW<<"|"<<contourH<<endl;
+                               // cout<<"find car size"<<contourW<<"|"<<contourH<<endl;
                                 carTrakcingWidth[j]=contourW;
                                 carTrakcingHeight[j]=contourH;
                                 carTrakcingGetSize[j]=true;
@@ -791,18 +791,19 @@ int main( int argc, char** argv )
                         
                     }
                 }
+                if((points[1][i].x<20 || points[1][i].x>1800)&&carTrakcingFinished[i]!=true)
+                {
+                    carTrakcingFinished[i]=true;
+                    carTrakcingStart[i]=false;
+                    cout<<"car "<<i<<"tracking finished"<<endl;
+                    outfile<<endl;
+                    outfile<<frameNumberString<<","<<to_string(timeFrame)<<"," << i<<","<<carTrakcingWidth[i]<<","<<carTrakcingHeight[i]<<","<<points[1][i].x<<","<<points[1][i].y<<","<<carTrakcingSpeed[i]<<","<<"finished"<<",";
+                    continue;
+                }
                 if( !status[i] )
                 {
-                    if((points[1][i].x<0 || points[1][i].x>1920)&&carTrakcingFinished[i]!=true)
-                    {
-                        carTrakcingFinished[i]=true;
-                        carTrakcingStart[i]=false;
-                        cout<<"car "<<i<<"tracking finished"<<endl;
-                        outfile<<endl;
-                        outfile<<frameNumberString<<","<<to_string(timeFrame)<<"," << i<<","<<carTrakcingWidth[i]<<","<<carTrakcingHeight[i]<<","<<points[1][i].x<<","<<points[1][i].y<<","<<carTrakcingSpeed[i]<<","<<"finished"<<",";
-                        continue;
-                    }
-                    else if(carTrakcingLost[i]!=true)
+                    
+                   if(carTrakcingLost[i]!=true)
                     {
                         carTrakcingFinished[i]=true;
                         carTrakcingStart[i]=false;
@@ -859,7 +860,7 @@ int main( int argc, char** argv )
         if( !points[0].empty() &&autoMode)
         {
             
-            
+            cout<<"auto mode"<<endl;
             for( int k=0; k < countourCenter.size(); k++ )
             {
              bool newPoint=true;
