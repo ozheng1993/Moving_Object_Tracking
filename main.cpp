@@ -626,12 +626,40 @@ int main( int argc, char** argv )
                     int contourY=0;
                     double contourW=0.0;
                     double contourH=0.0;
-                    contourX=boundRect[i].tl().x+(boundRect[i].br().x-boundRect[i].tl().x)/2;
-                    contourY=boundRect[i].tl().y+(boundRect[i].br().y-boundRect[i].tl().y)/2;
-                    
-                    contourW=boundRect[i].br().x-boundRect[i].tl().x;
-                    contourH=boundRect[i].br().y-boundRect[i].tl().y;
-                    
+                  
+                  
+                  double x1;
+                  double y1;
+                  double x2;
+                  double y2;
+                  
+                  contourW=boundRect[i].br().x-boundRect[i].tl().x;
+                  contourH=boundRect[i].br().y-boundRect[i].tl().y;
+                  
+                  if(contourW<35)
+                  {
+                      x1= boundRect[i].tl().x+(boundRect[i].br().x-boundRect[i].tl().x)/5;
+                      y1= boundRect[i].tl().y+(boundRect[i].br().y-boundRect[i].tl().y)/8;
+                      x2= boundRect[i].br().x-(boundRect[i].br().x-boundRect[i].tl().x)/5;
+                       y2= boundRect[i].br().y-(boundRect[i].br().y-boundRect[i].tl().y)/2;
+                  }
+                  else
+                  {
+                      x1= boundRect[i].tl().x+(boundRect[i].br().x-boundRect[i].tl().x)/5;
+                      y1= boundRect[i].tl().y+(boundRect[i].br().y-boundRect[i].tl().y)/8;
+                      x2= boundRect[i].br().x-(boundRect[i].br().x-boundRect[i].tl().x)/5;
+                      y2= boundRect[i].br().y-(boundRect[i].br().y-boundRect[i].tl().y)/2;
+                  }
+                  
+                  
+                  contourX=x1+(x2-x1)/2;
+                  contourY=y1+(y2-y1)/2;
+                  
+             
+                  
+                  
+                  
+                  
                     countourWidth.push_back(contourW);
                     countourHeight.push_back(contourH);
                     Point2f temPoint;
@@ -676,10 +704,7 @@ int main( int argc, char** argv )
 //
 //                    }
 //
-                  double x1= boundRect[i].tl().x+(boundRect[i].br().x-boundRect[i].tl().x)/5;
-                  double y1= boundRect[i].tl().y+(boundRect[i].br().y-boundRect[i].tl().y)/5;
-                  double x2= boundRect[i].br().x-(boundRect[i].br().x-boundRect[i].tl().x)/5;
-                  double y2= boundRect[i].br().y-(boundRect[i].br().y-boundRect[i].tl().y)/5;
+                  
                     // string carDinit = "CD init Dfor car: "+to_string(i);
                     drawContours( image, contours_poly, i, Scalar(255,0,255), 2, 8, vector<Vec4i>(), 0, Point() );
                   rectangle( image, cv::Point(x1,y1),cv::Point(x2,y2),Scalar(255,0,255), -1, 8, 0);
@@ -911,8 +936,7 @@ int main( int argc, char** argv )
         
         countourCenter.clear();
  imshow("LK Demo", image2);
-//        imshow("LK Demo2", image);
-//        imshow("LK Demo3", frame);
+         imshow("LK Dem1o", image);
         char c = (char)waitKey(10);
 //        if( c == 27 )
 //            break;
