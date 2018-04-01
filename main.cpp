@@ -333,7 +333,7 @@ int main( int argc, char** argv )
     
     
     
-    
+    bool puse=false;
     for(;;)
     {
         cap >> frame;
@@ -343,6 +343,38 @@ int main( int argc, char** argv )
         frameMat=frame;
         if( frame.empty() )
             break;
+        if(waitKey(1)==27)
+        {
+            puse=!puse;
+        }
+        while(puse)
+        {
+//            if(!mousePoints.empty())
+//            {
+//                for(int i =0;i<mousePoints.size();i++)
+//                {
+//                 circle( frame, mousePoints[i], 3, Scalar(0,255,0), -1, 8);
+//                }
+//            }
+            if(waitKey(1)==27)
+            {
+                puse=!puse;
+                break;
+            }
+            
+        }
+        
+        
+       
+        
+        
+        
+        
+        
+        
+        
+        
+        
         
         
 //        while(!selectScale)
@@ -693,38 +725,38 @@ int main( int argc, char** argv )
             for( i = k = 0; i < points[1].size(); i++ )
             {
                 
-                if(stoi(frameNumberString)%skipFrame==0)
-                {
-                    //cout<<"tracker speed: "<<i<<"i"<<endl;
-                    if(lastX[i]==0&&lastY[i]==0)
-                    {
-                        //cout<<"init speed: "<<i<<"i"<<endl;
-                        // cout<<"first time : "<<i<<endl;
-                        lastX[i]=points[1][i].x;
-                        lastY[i]=points[1][i].y;
-                        speed[i]=0;
-                    }
-                    else
-                    {
-                        
-                        double tmp=0;
-                        //cout<<"cal speed: "<<i<<"i"<<endl;
-                        //speedCounter[i]+=1;
-                        preX[i]=points[1][i].x;
-                        preY[i]=points[1][i].y;
-                        speedX[i]=preX[i]-lastX[i];
-                        speedY[i]=preY[i]-lastY[i];
-                        lastX[i]=preX[i];
-                        lastY[i]=preY[i];
-                        tmp=sqrt((speedX[i]*speedX[i])-(speedY[i]*speedY[i]));
-//                        if(abs(tmp- carTrakcingSpeed[i])<5&&tmp>0)
-//                        {
-                            carTrakcingSpeed[i]=tmp;
-//                        }
-                       
-                    }
-            
-                }
+//                if(stoi(frameNumberString)%skipFrame==0)
+//                {
+//                    //cout<<"tracker speed: "<<i<<"i"<<endl;
+//                    if(lastX[i]==0&&lastY[i]==0)
+//                    {
+//                        //cout<<"init speed: "<<i<<"i"<<endl;
+//                        // cout<<"first time : "<<i<<endl;
+//                        lastX[i]=points[1][i].x;
+//                        lastY[i]=points[1][i].y;
+//                        speed[i]=0;
+//                    }
+//                    else
+//                    {
+//
+//                        double tmp=0;
+//                        //cout<<"cal speed: "<<i<<"i"<<endl;
+//                        //speedCounter[i]+=1;
+//                        preX[i]=points[1][i].x;
+//                        preY[i]=points[1][i].y;
+//                        speedX[i]=preX[i]-lastX[i];
+//                        speedY[i]=preY[i]-lastY[i];
+//                        lastX[i]=preX[i];
+//                        lastY[i]=preY[i];
+//                        tmp=sqrt((speedX[i]*speedX[i])-(speedY[i]*speedY[i]));
+////                        if(abs(tmp- carTrakcingSpeed[i])<5&&tmp>0)
+////                        {
+//                            carTrakcingSpeed[i]=tmp;
+////                        }
+//
+//                    }
+//
+//                }
 
                 //cout<<points[1]<<endl;
                 if( addRemovePt )
@@ -883,8 +915,8 @@ int main( int argc, char** argv )
 //        imshow("LK Demo2", image);
     //    imshow("LK Demo3", frame);
         char c = (char)waitKey(10);
-        if( c == 27 )
-            break;
+//        if( c == 27 )
+//            break;
         switch( c )
         {
             case 'r':
