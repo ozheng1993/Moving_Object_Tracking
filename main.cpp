@@ -44,14 +44,34 @@ static void help()
     "\tn - switch the \"night\" mode on/off\n"
     "To add/remove a feature point click it\n" << endl;
 }
-
+bool selectRot=false;
+bool selectScale=false;
+bool tracking=false;
+bool drawLIne=false;
+double pixeToMeter=0;
+double realPixel=0;
+double realMetter=0;
+vector<float> preX;
+vector<float> preY;
+vector<float> lastX;
+vector<float> lastY;
+vector<float> speed;
+vector<float> speedX;
+vector<float> speedY;
+vector<float> speedCounter;
+vector<float> speedPreAvg;
+vector<float> speedAvg;
+vector<float> lostcount;
+vector<bool> finish;
+vector<bool> start;
+vector<bool> lost;
 Point2f point;
 vector<Point2f> mousePoints;
 vector<vector<Point2f> > pointsTrackId;
 vector<Point2f> countourCenter;
 vector<double> countourWidth;
 vector<double> countourHeight;
-vector<Point2f> newTrackCenter;
+vector<Point2f> carTrackCenter;
 vector<bool> carTrakcingStart;
 vector<bool> carTrakcingFinished;
 vector<bool>  carTrakcingLost;
@@ -59,16 +79,24 @@ vector<bool>  carTrakcingRemoved;
 vector<double>  carTrakcingWidth;
 vector<double>  carTrakcingHeight;
 vector<bool>  carTrakcingGetSize;
+vector<float>  carTrakcingSpeed;
+Mat frameMat;
+int skipFrame=6;
 //vector<int>  carTrakcingId;
 int carCount=0;
 //vector<Point2f> pointsTrackdeatal;
 
 bool addRemovePt = false;
+Mat Roi;
 
+vector<Point>  roiPoint;
+vector<Point> scalePoint;
 static void onMouse( int event, int x, int y, int /*flags*/, void* /*param*/ )
 {
     if( event == EVENT_LBUTTONDOWN )
     {
+        
+        
         point = Point2f((float)x, (float)y);
         cout<<"mouse x"<<(float)x<<"mouse y"<<(float)y<<endl;
         mousePoints.push_back(point);
@@ -76,8 +104,15 @@ static void onMouse( int event, int x, int y, int /*flags*/, void* /*param*/ )
         carTrakcingFinished.push_back(false);
         carTrakcingRemoved.push_back(false);
         carTrakcingLost.push_back(false);
-        
-        
+        preX.push_back(0);
+        preY.push_back(0);
+        lastX.push_back(0);
+        lastY.push_back(0);
+        speed.push_back(0);
+        speedX.push_back(0);
+        speedY.push_back(0);
+        carTrackCenter.push_back(point);
+        carTrakcingSpeed.push_back(0);
       carTrakcingWidth.push_back(0.0);
     carTrakcingHeight.push_back(0.0);
     carTrakcingGetSize.push_back(false);
@@ -85,12 +120,92 @@ static void onMouse( int event, int x, int y, int /*flags*/, void* /*param*/ )
        // circle( image2, point, 3, Scalar(0,255,0), -1, 8);
         //outfile<<frameNumberString<<","<<to_string(timeFrame)<<"," << i<<","<<10<<","<<10<<","<<points[1][i].x<<","<<points[1][i].y<<","<<"tracking"<<",";
         addRemovePt = true;
+     
+    }
+    else if  ( event == EVENT_RBUTTONDOWN )
+    {
+          //  cout << "Left button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
+        if(!selectRot)
+        {
+            roiPoint.push_back( Point(x,y));
+            cout<<roiPoint[roiPoint.size()-1]<<endl;
+        }
+        
+        
+     
+    }
+    else if  ( event == EVENT_MBUTTONDOWN )
+    {
+     
+        //  cout << "Left button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
+        if(!selectScale)
+        {
+        scalePoint.push_back( Point(x,y));
+        cout<<scalePoint[scalePoint.size()-1]<<endl;
+        }
+    }
+    else if ( event == EVENT_MOUSEMOVE )
+    {
+        //cout << "Mouse move over the window - position (" << x << ", " << y << ")" << endl;
     }
 }
+double drwaLine(Mat frame, int x1, int y1, int x2, int y2)
+{
+    cv::line(frame,
+             cv::Point(x1,y1)
+             ,
+             cv::Point(x2,y2),
+             cv::Scalar(255,0,0),
+             2,
+             LINE_8
+             );
+    double lineDist=sqrt(pow((x1-x2),2)-pow((y1-y2),2));
+    cout<<"linedistance"<<lineDist<<endl;
+    return lineDist;
+    
+}
 
+Mat resizeWindow(Mat frame)
+{
+    Roi=frame;
+    Mat src=Roi;
+    Mat dst=Roi;
+    int new_w=0;
+    int new_h=0;
+    new_w=src.cols;
+    new_h=src.rows;
+    Rect rectROI(0,0,new_w,new_h);
+    Mat mask(new_h, new_w, CV_8UC1, cv::Scalar(0));
+    Point P1(0,210);
+    Point P1_0(300,175);
+    Point P1_1(600,145);
+    Point P1_2(1300,145);
+    Point P2(1920,160);
+    Point P3(1920,250);
+    Point P3_1(1300,220);
+    Point P3_2(900,250);
+    Point P3_3(600,250);
+    Point P3_4(300,300);
+    Point P4(0,350);
+    vector< vector<Point> >  co_ordinates;
+    co_ordinates.push_back(vector<Point>());
+    for(int i=0;i<roiPoint.size();i++)
+    {
+           co_ordinates[0].push_back(roiPoint[i]);
+    }
+ 
+
+    drawContours( mask,co_ordinates,0, Scalar(255),CV_FILLED, 8 );
+    Mat srcROI=src(rectROI);
+    Mat dstROI=dst(rectROI);
+    Mat dst1;
+    srcROI.copyTo(dst1,mask);
+    return dst1;
+}
+void processVideo(char* videoFilename);
 int main( int argc, char** argv )
 {
-    VideoCapture cap;
+    //VideoCapture cap;
     TermCriteria termcrit(TermCriteria::COUNT|TermCriteria::EPS,20,0.03);
     Size subPixWinSize(10,10), winSize(31,31);
     //MOG2 approach
@@ -109,47 +224,282 @@ int main( int argc, char** argv )
     
     
     
-    cv::CommandLineParser parser(argc, argv, "{@input|0|}");
-    string input = parser.get<string>("@input");
-    
-    if( input.size() == 1 && isdigit(input[0]) )
-        cap.open(input[0] - '0');
-    else
-        cap.open(input);
-    
-    if( !cap.isOpened() )
-    {
-        cout << "Could not initialize capturing...\n";
+    if(argc<2){
+        cout<<
+        " Usage: tracker <video_name>\n"
+        " examples:\n"
+        " example_tracking_kcf Bolt/img/%04d.jpg\n"
+        " example_tracking_kcf faceocc2.webm\n"
+        << endl;
         return 0;
     }
+    std::string video = argv[1];
+    VideoCapture cap(video);
+    stringstream fps;
+    
+     fps << cap.get(CAP_PROP_FPS);
+    
     
     //open csv file
-    cout<<"filename"<<input<<endl;
-    string fileName="./"+input+".csv";
+    cout<<"filename"<<video<<endl;
+    string fileName="./"+video+".csv";
     ofstream outfile;
     outfile.open(fileName);
-    outfile<<"frameNUM"<<","<<"time(s)"<<","<< "id"<<","<<"width(m)"<<","<<"height(m)"<<","<<"x"<<","<<"y"<<","<<"speed"<<",";
+    outfile<<"this video is "<<fps.str()<<"fps"<<"speed cal skip every"<<skipFrame;
     outfile<<endl;
+    outfile<<"frameNUM"<<","<<"time(s)"<<","<< "id"<<","<<"width(m)"<<","<<"height(m)"<<","<<"x"<<","<<"y"<<","<<"speed"<<","<<"status"<<",";
+    outfile<<endl;
+     Mat gray, prevGray, image, frame,blur,image2;
     namedWindow( "LK Demo", 1 );
-    setMouseCallback( "LK Demo", onMouse, 0 );
-    
-    Mat gray, prevGray, image, frame,blur,image2;
+    setMouseCallback( "LK Demo", onMouse, NULL );
+       //  cout<<"please select ROI"<<endl;
+
+  
+   
     vector<Point2f> points[2];
     vector<int> id;
+
+
+//    while(!selectRot)
+//    {
+//        cout<<roiPoint[0].size()<<endl;
+//        rectangle(frameMat, cv::Point(10, 2), cv::Point(650,20),
+//                  cv::Scalar(255,255,255), -1);
+//        string displayInfor="please select ROI by right click mouse,esc to cancle,entry to finish";
+//        putText(frameMat, displayInfor.c_str(), cv::Point(15, 15),
+//                FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(255,0,0));
+//
+//
+//
+//        if(waitKey(1)==27)
+//        {
+//            roiPoint[0].pop_back();
+//            cv::circle(frameMat,
+//                       cv::Point(roiPoint[0][roiPoint[0].size()].x,roiPoint[0][roiPoint[0].size()].y),
+//                       3,
+//                       cv::Scalar(0,255,0),
+//                       -1,
+//                       LINE_8
+//                       );
+//
+//            cout<<"esc pressed"<<roiPoint[0][0].x<<endl;
+//
+//        }
+//        else if(waitKey(1)==13)
+//        {
+//            cout<<"roi entry key predded"<<endl;
+//            frame= resizeWindow(frame);
+//            selectRot=true;
+//            // close the window
+//            //DestroyWindow("My Window");
+//            //frameMat.release();
+//            break;
+//        }
+//
+//        imshow("LK Demo", frameMat);
+//    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     for(;;)
     {
         cap >> frame;
+        
+        rectangle(frame, cv::Point(10, 2), cv::Point(650,20),
+                  cv::Scalar(255,255,255), -1);
+        frameMat=frame;
         if( frame.empty() )
             break;
         
+        
+//        while(!selectScale)
+//        {
+//
+//            frameMat=frameMat;
+//            rectangle(frameMat, cv::Point(10, 2), cv::Point(650,20),
+//                      cv::Scalar(255,255,255), -1);
+//
+//            string displayInfor="please select scale by mid click mouse,esc to cancle,entry to finish";
+//            putText(frameMat, displayInfor.c_str(), cv::Point(15, 15),
+//                    FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(255,0,0));
+//
+//
+//            if(waitKey(1)==27)
+//            {
+//                scalePoint[0].pop_back();
+//                cv::circle(frame,
+//                           cv::Point(scalePoint[0][scalePoint[0].size()].x,scalePoint[0][scalePoint[0].size()].y),
+//                           3,
+//                           cv::Scalar(0,255,0),
+//                           -1,
+//                           LINE_8
+//                           );
+//
+//                cout<<"esc pressed"<<scalePoint[0][0].x<<endl;
+//
+//            }
+//            else if(waitKey(1)==13)
+//            {
+//                cout<<"selectScale entry key predded"<<endl;
+//                double line1x1=scalePoint[0][0].x;
+//                double line1y1=scalePoint[0][0].y;
+//                double line1x2=scalePoint[0][1].x;
+//                double line1y2=scalePoint[0][1].y;
+//
+//                cv::line(frameMat,
+//                         cv::Point(line1x1,line1y1)
+//                         ,
+//                         cv::Point(line1x2,line1y2),
+//                         cv::Scalar(255,0,0),
+//                         2,
+//                         LINE_8
+//                         );
+//
+//                double xdiff=line1x1-line1x2;
+//                double ydiff=line1y1-line1y2;
+//                double ydiff2=ydiff*ydiff;
+//                double xdiff2=xdiff*xdiff;
+//
+//                double lineDist=sqrt(ydiff2+xdiff2);
+//                cout<<"xdiff2"<<xdiff2<<endl;
+//                cout<<"ydiff2"<<ydiff2<<endl;
+//                cout<<"linedistance"<<lineDist<<endl;
+//                //cout<<"reallMeter"<<reallMeter<<endl;
+//                // pixelToMeterfinal=lineDist/reallMeter;
+//                realPixel=lineDist;
+//                selectScale=true;
+//                // close the window
+//                //DestroyWindow("My Window");
+//                // frameMat.release();
+//                break;
+//            }
+//
+//
+//            imshow("LK Demo", frameMat);
+//
+//        }
+
+        char d = (char)waitKey(10);
+   
+        switch( d )
+        {
+            case 'u':
+                if(roiPoint.size()>0)
+                {
+                scalePoint.pop_back();
+                }
+                break;
+            case 'i':
+                if(scalePoint.size()>0)
+                {
+               scalePoint.pop_back();
+                }
+                break;
+            case 'o':
+                 selectScale=true;
+                break;
+            case 'p':
+                 selectRot=true;
+                break;
+        }
+        if(roiPoint.size()>0&&!selectRot)
+        {
+            for(int i=0;i<roiPoint.size();i++)
+            {
+                circle( frame, roiPoint[i], 3, Scalar(255,125,255), -1, 8);
+            }
+        }
+        if(scalePoint.size()>0&&!selectScale)
+        {
+            for(int i=0;i<scalePoint.size();i++)
+            {
+                circle( frame, scalePoint[i], 3, Scalar(255,125,0), -1, 8);
+            }
+        }
+        if(selectScale)
+        {
+            double line1x1=scalePoint[0].x;
+                            double line1y1=scalePoint[0].y;
+                            double line1x2=scalePoint[1].x;
+                            double line1y2=scalePoint[1].y;
+            
+                            cv::line(frameMat,
+                                     cv::Point(line1x1,line1y1)
+                                     ,
+                                     cv::Point(line1x2,line1y2),
+                                     cv::Scalar(255,0,0),
+                                     2,
+                                     LINE_8
+                                     );
+            
+                            double xdiff=line1x1-line1x2;
+                            double ydiff=line1y1-line1y2;
+                            double ydiff2=ydiff*ydiff;
+                            double xdiff2=xdiff*xdiff;
+            
+                            double lineDist=sqrt(ydiff2+xdiff2);
+                            cout<<"xdiff2"<<xdiff2<<endl;
+                            cout<<"ydiff2"<<ydiff2<<endl;
+                            cout<<"linedistance"<<lineDist<<endl;
+                            //cout<<"reallMeter"<<reallMeter<<endl;
+                            // pixelToMeterfinal=lineDist/reallMeter;
+                            realPixel=lineDist;
+        }
+        
+        if(selectRot)
+        {
+             frame= resizeWindow(frame);
+        }
+
+       // cout<<roiPoint.size()<<endl;
+        
+        
+        
+        
+        
+        
+        
+        
         stringstream ss;
         stringstream st;
-        stringstream fps;
+        
         rectangle(frame, cv::Point(10, 2), cv::Point(450,20),
                   cv::Scalar(255,255,255), -1);
         ss << cap.get(CAP_PROP_POS_FRAMES);
-        fps << cap.get(CAP_PROP_FPS);
+      
         st << cap.get( CAP_PROP_POS_MSEC);
         string frameNumberString = ss.str();
         string fpsNumberString = fps.str();
@@ -163,11 +513,11 @@ int main( int argc, char** argv )
         putText(frame, to_string(timeFrame), cv::Point(190, 15),
                 FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(255,0,0));
         
-        
-        
-       // resize(frame, frame, cv::Size(), 0.5, 0.5);
+        // resize(frame, frame, cv::Size(), 0.5, 0.5);
         frame.copyTo(image);
         frame.copyTo(image2);
+        
+     
         
         // Create a kernel that we will use for accuting/sharpening our image
         Mat kernel = (Mat_<float>(3,3) <<
@@ -245,9 +595,10 @@ int main( int argc, char** argv )
         for( int i = 0; i< contours.size(); i++ )
         {
             double a=contourArea( contours[i],false);
-            // cout<<a<<endl;
-              if(a>50)
-                {
+            
+              if(a>150&&a<3000)
+              {
+                   cout<<a<<endl;
                     int contourX=0;
                     int contourY=0;
                     double contourW=0.0;
@@ -282,6 +633,7 @@ int main( int argc, char** argv )
                                 carTrakcingGetSize[j]=true;
                                 continue;
                             }
+                            
                         }
                     }
 //
@@ -340,6 +692,40 @@ int main( int argc, char** argv )
             //int counter=0;
             for( i = k = 0; i < points[1].size(); i++ )
             {
+                
+                if(stoi(frameNumberString)%skipFrame==0)
+                {
+                    //cout<<"tracker speed: "<<i<<"i"<<endl;
+                    if(lastX[i]==0&&lastY[i]==0)
+                    {
+                        //cout<<"init speed: "<<i<<"i"<<endl;
+                        // cout<<"first time : "<<i<<endl;
+                        lastX[i]=points[1][i].x;
+                        lastY[i]=points[1][i].y;
+                        speed[i]=0;
+                    }
+                    else
+                    {
+                        
+                        double tmp=0;
+                        //cout<<"cal speed: "<<i<<"i"<<endl;
+                        //speedCounter[i]+=1;
+                        preX[i]=points[1][i].x;
+                        preY[i]=points[1][i].y;
+                        speedX[i]=preX[i]-lastX[i];
+                        speedY[i]=preY[i]-lastY[i];
+                        lastX[i]=preX[i];
+                        lastY[i]=preY[i];
+                        tmp=sqrt((speedX[i]*speedX[i])-(speedY[i]*speedY[i]));
+//                        if(abs(tmp- carTrakcingSpeed[i])<5&&tmp>0)
+//                        {
+                            carTrakcingSpeed[i]=tmp;
+//                        }
+                       
+                    }
+            
+                }
+
                 //cout<<points[1]<<endl;
                 if( addRemovePt )
                 {
@@ -349,20 +735,20 @@ int main( int argc, char** argv )
                         carTrakcingFinished[i]=true;
                         addRemovePt = false;
                         outfile<<endl;
-                        outfile<<frameNumberString<<","<<to_string(timeFrame)<<"," << i<<","<<carTrakcingWidth[i]<<","<<carTrakcingHeight[i]<<","<<points[1][i].x<<","<<points[1][i].y<<","<<"removed"<<",";
+                        outfile<<frameNumberString<<","<<to_string(timeFrame)<<"," << i<<","<<carTrakcingWidth[i]<<","<<carTrakcingHeight[i]<<","<<points[1][i].x<<","<<points[1][i].y<<","<<carTrakcingSpeed[i]<<","<<"removed"<<",";
                         continue;
                         
                     }
                 }
                 if( !status[i] )
                 {
-                    if(points[1][i].x<10 || points[1][i].x>1700)
+                    if((points[1][i].x<10 || points[1][i].x>1700)&&carTrakcingFinished[i]!=true)
                     {
                         carTrakcingFinished[i]=true;
                         carTrakcingStart[i]=false;
                         cout<<"car "<<i<<"tracking finished"<<endl;
                         outfile<<endl;
-                        outfile<<frameNumberString<<","<<to_string(timeFrame)<<"," << i<<","<<carTrakcingWidth[i]<<","<<carTrakcingHeight[i]<<points[1][i].x<<","<<points[1][i].y<<","<<"finished"<<",";
+                        outfile<<frameNumberString<<","<<to_string(timeFrame)<<"," << i<<","<<carTrakcingWidth[i]<<","<<carTrakcingHeight[i]<<points[1][i].x<<","<<points[1][i].y<<","<<carTrakcingSpeed[i]<<","<<"finished"<<",";
                         continue;
                     }
                     else if(carTrakcingLost[i]!=true)
@@ -372,7 +758,7 @@ int main( int argc, char** argv )
                         carTrakcingLost[i]=true;
                         cout<<"car "<<i<<"lost"<<endl;
                         outfile<<endl;
-                        outfile<<frameNumberString<<","<<to_string(timeFrame)<<"," << i<<","<<carTrakcingWidth[i]<<","<<carTrakcingHeight[i]<<","<<points[1][i].x<<","<<points[1][i].y<<","<<"lost"<<",";
+                        outfile<<frameNumberString<<","<<to_string(timeFrame)<<"," << i<<","<<carTrakcingWidth[i]<<","<<carTrakcingHeight[i]<<","<<points[1][i].x<<","<<points[1][i].y<<","<<carTrakcingSpeed[i]<<","<<"lost"<<",";
                         continue;
                     }
                   
@@ -386,7 +772,7 @@ int main( int argc, char** argv )
                 putText(image2, to_string(i), points[0][i], FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(255,0,0));
                 //outfile<<"frameNUM"<<","<<"time(s)"<<","<< "id"<<","<<"width(m)"<<","<<"height(m)"<<","<<"x"<<","<<"y"<<",";
                     outfile<<endl;
-                    outfile<<frameNumberString<<","<<to_string(timeFrame)<<"," << i<<","<<carTrakcingWidth[i]<<","<<carTrakcingHeight[i]<<","<<points[1][i].x<<","<<points[1][i].y<<","<<"tracking"<<",";
+                    outfile<<frameNumberString<<","<<to_string(timeFrame)<<"," << i<<","<<carTrakcingWidth[i]<<","<<carTrakcingHeight[i]<<","<<points[1][i].x<<","<<points[1][i].y<<","<<carTrakcingSpeed[i]<<","<<"tracking"<<",";
                 }
                // counter++;
             }
@@ -428,46 +814,25 @@ int main( int argc, char** argv )
              bool newPoint=true;
                 for( int i=0; i < points[0].size(); i++ )
                 {
-                    //check contour center
-                    //Point2f temTrackPoint;
-                   
-                      // temTrackPoint=countourCenter[k];
-                    
-                    
-                    
-//                 if(countourCenter[k].x>400&&countourCenter[k].x<1600 )
-//              {
-//                       if( norm(countourCenter[k] - points[1][i]) <= 50 )
-//                       {
-//                           newPoint=false;
+                    //check contour cente
 //
-//
-//                       }
-//
-//                    }
-//
-                if(countourCenter[k].x>100 )
+                if(countourCenter[k].x>300 )
                     {
                          newPoint=false;
                         break;
                     }
-
-
+                    
+                    if(countourCenter[k].x<80 )
+                    {
+                        newPoint=false;
+                        break;
+                    }
                         if( norm(countourCenter[k] - points[1][i]) <= 20 )
                         {
                             newPoint=false;
                             break;
 
                         }
-
-                    
-//                    if( norm(countourCenter[k] - points[1][i]) <= 50 )
-//                                               {
-//                                                   newPoint=false;
-//
-//                                                   break;
-//                                               }
-//
                    }
                 if(newPoint==true)
                 {
@@ -488,6 +853,15 @@ int main( int argc, char** argv )
                         carTrakcingWidth.push_back(0.0);
                         carTrakcingHeight.push_back(0.0);
                         carTrakcingGetSize.push_back(false);
+                        preX.push_back(0);
+                        preY.push_back(0);
+                        lastX.push_back(0);
+                        lastY.push_back(0);
+                        speed.push_back(0);
+                        speedX.push_back(0);
+                        speedY.push_back(0);
+                        carTrakcingSpeed.push_back(0);
+                         carTrackCenter.push_back(countourCenter[k]);
                         addRemovePt = false;
                     }
                     
@@ -505,8 +879,9 @@ int main( int argc, char** argv )
         }
         
         countourCenter.clear();
-        imshow("LK Demo", image2);
-        
+ imshow("LK Demo", image2);
+//        imshow("LK Demo2", image);
+    //    imshow("LK Demo3", frame);
         char c = (char)waitKey(10);
         if( c == 27 )
             break;
