@@ -246,14 +246,14 @@ int main( int argc, char** argv )
     stringstream fps;
     
      fps << cap.get(CAP_PROP_FPS);
-    
-    
+    cap>>frameMat;
+    cv::Size s = frameMat.size();
     //open csv file
     cout<<"filename"<<video<<endl;
     string fileName="./"+video+".csv";
     ofstream outfile;
     outfile.open(fileName);
-    outfile<<"this video is "<<fps.str()<<"fps"<<"speed cal skip every"<<skipFrame;
+    outfile<<"this video is "<<fps.str()<<"fps,"<<"windowsize"<<s.width<<"x"<<s.height<<",has been resize to 19020x1080";
     outfile<<endl;
     outfile<<"frameNUM"<<","<<"time(s)"<<","<< "id"<<","<<"width(m)"<<","<<"height(m)"<<","<<"x"<<","<<"y"<<","<<"speed"<<","<<"status"<<",";
     outfile<<endl;
@@ -325,8 +325,8 @@ int main( int argc, char** argv )
     for(;;)
     {
         cap >> frame;
-        cv::Size s = frame.size();
-      cout<<s.width<<"|" <<s.height;
+        
+     // cout<<s.width<<"|" <<s.height;
 
         
         rectangle(frame, cv::Point(10, 2), cv::Point(650,20),
