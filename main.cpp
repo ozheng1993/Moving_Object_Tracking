@@ -233,6 +233,14 @@ int main( int argc, char** argv )
         << endl;
         return 0;
     }
+    
+
+    
+    
+    
+    
+    
+    
     std::string video = argv[1];
     VideoCapture cap(video);
     stringstream fps;
@@ -254,7 +262,13 @@ int main( int argc, char** argv )
     setMouseCallback( "LK Demo", onMouse, NULL );
        //  cout<<"please select ROI"<<endl;
 
-  
+    if(argc>2)
+    {
+        Mat framePre;
+        for( int x = 0; x < stoi(argv[2]); x++ ) {
+            cap>>framePre;
+        }
+    }
    
     vector<Point2f> points[2];
     vector<int> id;
@@ -305,42 +319,23 @@ int main( int argc, char** argv )
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+
     
     bool puse=false;
     for(;;)
     {
         cap >> frame;
+        cv::Size s = frame.size();
+      cout<<s.width<<"|" <<s.height;
+
         
         rectangle(frame, cv::Point(10, 2), cv::Point(650,20),
                   cv::Scalar(255,255,255), -1);
         frameMat=frame;
+        
+        
+        
+         resize(frame, frame, Size(1920, 1080));
         if( frame.empty() )
             break;
         if(waitKey(1)==27)
@@ -527,7 +522,7 @@ int main( int argc, char** argv )
         string frameNumberString = ss.str();
         string fpsNumberString = fps.str();
         string timeNumberString = st.str();
-        double timeFrame=stod(timeNumberString)/1000+40;
+        double timeFrame=stod(timeNumberString)/1000;
         //  string timeNumberString = st.str();
         putText(frame, frameNumberString.c_str(), cv::Point(15, 15),
                 FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(255,0,0));
@@ -798,13 +793,13 @@ int main( int argc, char** argv )
                 }
                 if( !status[i] )
                 {
-                    if((points[1][i].x<10 || points[1][i].x>1700)&&carTrakcingFinished[i]!=true)
+                    if((points[1][i].x<0 || points[1][i].x>1920)&&carTrakcingFinished[i]!=true)
                     {
                         carTrakcingFinished[i]=true;
                         carTrakcingStart[i]=false;
                         cout<<"car "<<i<<"tracking finished"<<endl;
                         outfile<<endl;
-                        outfile<<frameNumberString<<","<<to_string(timeFrame)<<"," << i<<","<<carTrakcingWidth[i]<<","<<carTrakcingHeight[i]<<points[1][i].x<<","<<points[1][i].y<<","<<carTrakcingSpeed[i]<<","<<"finished"<<",";
+                        outfile<<frameNumberString<<","<<to_string(timeFrame)<<"," << i<<","<<carTrakcingWidth[i]<<","<<carTrakcingHeight[i]<<","<<points[1][i].x<<","<<points[1][i].y<<","<<carTrakcingSpeed[i]<<","<<"finished"<<",";
                         continue;
                     }
                     else if(carTrakcingLost[i]!=true)
@@ -872,13 +867,13 @@ int main( int argc, char** argv )
                 {
                     //check contour cente
 //
-                if(countourCenter[k].x>300 )
+                if(countourCenter[k].x>200 )
                     {
                          newPoint=false;
                         break;
                     }
                     
-                    if(countourCenter[k].x<80 )
+                    if(countourCenter[k].x<40 )
                     {
                         newPoint=false;
                         break;
@@ -936,7 +931,7 @@ int main( int argc, char** argv )
         
         countourCenter.clear();
  imshow("LK Demo", image2);
-         imshow("LK Dem1o", image);
+   // imshow("LK Dem1o", image);
         char c = (char)waitKey(10);
 //        if( c == 27 )
 //            break;
