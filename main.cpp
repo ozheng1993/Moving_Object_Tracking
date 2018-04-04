@@ -619,7 +619,7 @@ int main( int argc, char** argv )
         {
             double a=contourArea( contours[i],false);
             
-              if(a>50&&a<3000)
+              if(a>150&&a<3000)
               {
                   // cout<<a<<endl;
                     int contourX=0;
@@ -837,7 +837,7 @@ int main( int argc, char** argv )
                 //points[1][k++] = points[1][i];
                 if(carTrakcingFinished[i]==false)
                 {
-                circle( image2, points[1][i], 1, Scalar(0,255,0), -1, 8);
+                circle( image2, points[1][i], 3, Scalar(255,255,255), -1, 8);
                 putText(image2, to_string(i), points[0][i], FONT_HERSHEY_SIMPLEX, 1 , cv::Scalar(255,0,0));
                 //outfile<<"frameNUM"<<","<<"time(s)"<<","<< "id"<<","<<"width(m)"<<","<<"height(m)"<<","<<"x"<<","<<"y"<<",";
                     outfile<<endl;
