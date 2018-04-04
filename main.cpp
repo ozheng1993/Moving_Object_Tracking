@@ -146,7 +146,7 @@ static void onMouse( int event, int x, int y, int /*flags*/, void* /*param*/ )
     }
     else if ( event == EVENT_MOUSEMOVE )
     {
-        //cout << "Mouse move over the window - position (" << x << ", " << y << ")" << endl;
+        cout << "Mouse move over the window - position (" << x << ", " << y << ")" << endl;
     }
 }
 double drwaLine(Mat frame, int x1, int y1, int x2, int y2)
@@ -207,7 +207,7 @@ int main( int argc, char** argv )
 {
     //VideoCapture cap;
     TermCriteria termcrit(TermCriteria::COUNT|TermCriteria::EPS,20,0.03);
-    Size subPixWinSize(10,10), winSize(31,31);
+    Size subPixWinSize(15,15), winSize(15,15);
     //MOG2 approach
     pMOG2 = createBackgroundSubtractorMOG2();
     pMOG2->setDetectShadows(true);
@@ -215,7 +215,7 @@ int main( int argc, char** argv )
     pMOG2->setNMixtures(5);
     pMOG2->setBackgroundRatio(0.7);
     pMOG2->setShadowValue(10);
-    const int MAX_COUNT = 5000;
+    const int MAX_COUNT = 50000;
     bool needToInit = false;
     bool autoMode= false;
     bool nightMode = false;
@@ -314,11 +314,12 @@ int main( int argc, char** argv )
 //    }
 
     
-    
-    
-    
-    
-    
+//    stringstream starttime;
+//
+//    fpstarttimes << cap.get(CAP_PROP_FPS);
+//
+//    cout<<"video start time"<<starttime<<endl;
+//
 
     
     bool puse=false;
@@ -522,7 +523,7 @@ int main( int argc, char** argv )
         string frameNumberString = ss.str();
         string fpsNumberString = fps.str();
         string timeNumberString = st.str();
-        double timeFrame=stod(timeNumberString)/1000;
+        double timeFrame=stod(timeNumberString)/1000+40;
         //  string timeNumberString = st.str();
         putText(frame, frameNumberString.c_str(), cv::Point(15, 15),
                 FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(255,0,0));
@@ -560,8 +561,12 @@ int main( int argc, char** argv )
         //imshow( "New Sharped Image", imgResult );
  
         cvtColor(image, gray, COLOR_BGR2GRAY);
-        GaussianBlur( gray, blur, Size(3, 3), 5, 5);
+        GaussianBlur( gray, blur, Size(15, 15), 25,25);
         pMOG2->apply(blur, fgMaskMOG2,-1);
+        
+        
+//         imshow("LK blur", blur);
+//             imshow("LK Desssss s s sm1o", fgMaskMOG2);
 //        GaussianBlur( fgMaskMOG2, blur, Size(3, 3), 5, 5);
 //        pMOG2->apply(fgMaskMOG2, fgMaskMOG2,-1);
 //        //imshow("fgMaskMOG21", fgMaskMOG2);
@@ -589,7 +594,7 @@ int main( int argc, char** argv )
         
        // imshow("mog Demo", fgMaskMOG2);
 
-
+ //imshow("LK fgMaskMOG2", fgMaskMOG2);
         vector<vector<Point> > contours;
         vector<Vec4i> hierarchy;
         /// Find contours
@@ -614,7 +619,7 @@ int main( int argc, char** argv )
         {
             double a=contourArea( contours[i],false);
             
-              if(a>100&&a<3000)
+              if(a>50&&a<3000)
               {
                   // cout<<a<<endl;
                     int contourX=0;
@@ -630,22 +635,30 @@ int main( int argc, char** argv )
                   
                   contourW=boundRect[i].br().x-boundRect[i].tl().x;
                   contourH=boundRect[i].br().y-boundRect[i].tl().y;
-                  
-                  if(contourW<35)
-                  {
-                      x1= boundRect[i].tl().x+(boundRect[i].br().x-boundRect[i].tl().x)/5;
-                      y1= boundRect[i].tl().y+(boundRect[i].br().y-boundRect[i].tl().y)/8;
-                      x2= boundRect[i].br().x-(boundRect[i].br().x-boundRect[i].tl().x)/5;
-                       y2= boundRect[i].br().y-(boundRect[i].br().y-boundRect[i].tl().y)/2;
-                  }
-                  else
-                  {
-                      x1= boundRect[i].tl().x+(boundRect[i].br().x-boundRect[i].tl().x)/5;
-                      y1= boundRect[i].tl().y+(boundRect[i].br().y-boundRect[i].tl().y)/8;
-                      x2= boundRect[i].br().x-(boundRect[i].br().x-boundRect[i].tl().x)/5;
-                      y2= boundRect[i].br().y-(boundRect[i].br().y-boundRect[i].tl().y)/2;
-                  }
-                  
+                  x1= boundRect[i].tl().x+(boundRect[i].br().x-boundRect[i].tl().x)/3;
+                  y1= boundRect[i].tl().y+(boundRect[i].br().y-boundRect[i].tl().y)/3;
+                  x2= boundRect[i].br().x-(boundRect[i].br().x-boundRect[i].tl().x)/3;
+                  y2= boundRect[i].br().y-(boundRect[i].br().y-boundRect[i].tl().y)/3;
+//                  if(contourW<35)
+//                  {
+////                      x1= boundRect[i].tl().x+(boundRect[i].br().x-boundRect[i].tl().x)/5;
+////                      y1= boundRect[i].tl().y+(boundRect[i].br().y-boundRect[i].tl().y)/8;
+////                      x2= boundRect[i].br().x-(boundRect[i].br().x-boundRect[i].tl().x)/5;
+////                      y2= boundRect[i].br().y-(boundRect[i].br().y-boundRect[i].tl().y)/2;
+//
+//                                            x1= boundRect[i].tl().x+(boundRect[i].br().x-boundRect[i].tl().x)/6;
+//                                            y1= boundRect[i].tl().y+(boundRect[i].br().y-boundRect[i].tl().y)/6;
+//                                            x2= boundRect[i].br().x-(boundRect[i].br().x-boundRect[i].tl().x)/6;
+//                                            y2= boundRect[i].br().y-(boundRect[i].br().y-boundRect[i].tl().y)/6;
+//                  }
+//                  else
+//                  {
+//                      x1= boundRect[i].tl().x+(boundRect[i].br().x-boundRect[i].tl().x)/5;
+//                      y1= boundRect[i].tl().y+(boundRect[i].br().y-boundRect[i].tl().y)/8;
+//                      x2= boundRect[i].br().x-(boundRect[i].br().x-boundRect[i].tl().x)/5;
+//                      y2= boundRect[i].br().y-(boundRect[i].br().y-boundRect[i].tl().y)/2;
+//                  }
+//
                   
                   contourX=x1+(x2-x1)/2;
                   contourY=y1+(y2-y1)/2;
@@ -701,9 +714,10 @@ int main( int argc, char** argv )
 //
                   
                     // string carDinit = "CD init Dfor car: "+to_string(i);
-                    drawContours( image, contours_poly, i, Scalar(255,0,255), 2, 8, vector<Vec4i>(), 0, Point() );
+                    drawContours( image2, contours_poly, i, Scalar(255,0,255), 0.5, 8, vector<Vec4i>(), 0, Point() );
                   rectangle( image, cv::Point(x1,y1),cv::Point(x2,y2),Scalar(255,0,255), -1, 8, 0);
-                    rectangle( image2, boundRect[i].tl(), boundRect[i].br(),Scalar(255,0,255), 1, 8, 0);
+                   rectangle( image2, cv::Point(x1,y1),cv::Point(x2,y2),Scalar(0,255,0), 0.5, 8, 0);
+                    rectangle( image2, boundRect[i].tl(), boundRect[i].br(),Scalar(255,0,255), 0.5, 8, 0);
                 }
         }
 
@@ -711,8 +725,11 @@ int main( int argc, char** argv )
         //bitwise_or(image,fgMaskMOG2,image);
         
         Mat newGray;
+         //cvtColor(image, image, COLOR_BGR2GRAY);
         cvtColor(image, hsv, COLOR_BGR2HSV);
         cvtColor(hsv, newGray, COLOR_BGR2GRAY);
+        
+         //imshow("LK newGray", hsv);
         //Mat res;
        // bitwise_or(newGray, newGray, res);      imshow("OR", res);
         
@@ -791,7 +808,7 @@ int main( int argc, char** argv )
                         
                     }
                 }
-                if((points[1][i].x<20 || points[1][i].x>1800)&&carTrakcingFinished[i]!=true)
+                if((points[1][i].x<20 || points[1][i].x>1800||points[1][i].y>1000||points[1][i].y<20)&&carTrakcingFinished[i]!=true)
                 {
                     carTrakcingFinished[i]=true;
                     carTrakcingStart[i]=false;
@@ -803,7 +820,7 @@ int main( int argc, char** argv )
                 if( !status[i] )
                 {
                     
-                   if(carTrakcingLost[i]!=true)
+                   if(carTrakcingLost[i]!=true&&carTrakcingFinished[i]!=true)
                     {
                         carTrakcingFinished[i]=true;
                         carTrakcingStart[i]=false;
@@ -820,8 +837,8 @@ int main( int argc, char** argv )
                 //points[1][k++] = points[1][i];
                 if(carTrakcingFinished[i]==false)
                 {
-                circle( image2, points[1][i], 3, Scalar(0,255,0), -1, 8);
-                putText(image2, to_string(i), points[0][i], FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(255,0,0));
+                circle( image2, points[1][i], 1, Scalar(0,255,0), -1, 8);
+                putText(image2, to_string(i), points[0][i], FONT_HERSHEY_SIMPLEX, 1 , cv::Scalar(255,0,0));
                 //outfile<<"frameNUM"<<","<<"time(s)"<<","<< "id"<<","<<"width(m)"<<","<<"height(m)"<<","<<"x"<<","<<"y"<<",";
                     outfile<<endl;
                     outfile<<frameNumberString<<","<<to_string(timeFrame)<<"," << i<<","<<carTrakcingWidth[i]<<","<<carTrakcingHeight[i]<<","<<points[1][i].x<<","<<points[1][i].y<<","<<carTrakcingSpeed[i]<<","<<"tracking"<<",";
@@ -860,7 +877,7 @@ int main( int argc, char** argv )
         if( !points[0].empty() &&autoMode)
         {
             
-            cout<<"auto mode"<<endl;
+           // cout<<"auto mode"<<endl;
             for( int k=0; k < countourCenter.size(); k++ )
             {
              bool newPoint=true;
@@ -921,7 +938,7 @@ int main( int argc, char** argv )
                     
                    // newTrackCenter.push_back(countourCenter[k]);
                     
-                    //circle( image2, countourCenter[k], 3, Scalar(255,0,0), -1, 8);
+                    //circle( image, countourCenter[k], 3, Scalar(k,0,0), -1, 8);
                    // putText(image2, to_string(i), mousePoints[i], FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(255,0,0));
                 }
                 
@@ -931,8 +948,8 @@ int main( int argc, char** argv )
         }
         
         countourCenter.clear();
- imshow("LK Demo", image2);
-   // imshow("LK Dem1o", image);
+        imshow("LK Demo", image2);
+       // imshow("LK Dem1o", image);
         char c = (char)waitKey(10);
 //        if( c == 27 )
 //            break;
